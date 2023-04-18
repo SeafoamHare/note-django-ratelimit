@@ -1,11 +1,31 @@
 import time
+import re
 
+_PERIODS = {
+        's': 1,
+        'm': 60,
+        'h': 60 * 60,
+        'd': 24 * 60 * 60,
+        }
+rate_re = re.compile(r'([\d]+)/([\d]*)([smhd])?')
+
+def _split_rate(rate):
+        if isinstance(rate, tuple):
+            return rate
+        count, multi, period = rate_re.match(rate).groups()
+        count = int(count)
+        if not period:
+            period = 's'
+        seconds = _PERIODS[period.lower()]
+        if multi:
+            seconds = seconds * int(multi)
+        return count, seconds
+        
 class TokenBucket:
     
-    def __init__(self, capacity, fill_rate):
-        self.capacity = float(capacity)
+    def __init__(self, rate):
+        self.capacity, self.fill_rate = _split_rate(rate)
         self.tokens = self.capacity
-        self.fill_rate = fill_rate
         self.last_update = time.time()
     
     def consume(self, tokens):
